@@ -1,0 +1,64 @@
+alias: Gang Automatisering V4 (snellere respons)
+description: Automatisering met directe respons op beweging
+triggers:
+  - entity_id:
+      - binary_sensor.hue_motion_sensor_gang_badkamer_bezetting
+    from: "off"
+    to: "on"
+    trigger: state
+  - entity_id:
+      - binary_sensor.lumi_motion_sensor_entree_beweging_3
+    from: "off"
+    to: "on"
+    trigger: state
+actions:
+  - alias: Zet het licht aan (dag en nacht verschillende waarden)
+    choose:
+      - conditions:
+          - condition: time
+            after: "08:00:00"
+            before: "20:00:00"
+        sequence:
+          - target:
+              entity_id: light.texas_instruments_coordinator_gang
+            data:
+              kelvin: 2100
+              brightness_pct: 80
+            action: light.turn_on
+          - target:
+              entity_id: light.ganglamp_plafond_entree_licht
+            action: homeassistant.turn_on
+            data: {}
+      - conditions:
+          - condition: time
+            after: "20:00:00"
+            before: "08:00:00"
+        sequence:
+          - target:
+              entity_id: light.texas_instruments_coordinator_gang
+            data:
+              kelvin: 2045
+              brightness_pct: 1
+            action: light.turn_on
+          - target:
+              entity_id: light.ganglamp_plafond_entree_licht
+            action: homeassistant.turn_on
+            data: {}
+  - alias: Wachten tot beweging stopt
+    wait_for_trigger:
+      - entity_id:
+          - binary_sensor.hue_motion_sensor_gang_badkamer_bezetting
+          - binary_sensor.lumi_motion_sensor_entree_beweging_3
+        from: "on"
+        to: "off"
+        trigger: state
+  - alias: Wacht 2 minuten extra
+    delay: "00:02:00"
+  - alias: Zet het licht uit
+    target:
+      entity_id:
+        - light.texas_instruments_coordinator_gang
+        - light.ganglamp_plafond_entree_licht
+    action: light.turn_off
+    data: {}
+mode: restart
